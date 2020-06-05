@@ -22,8 +22,10 @@ package thrift
 import (
 	"fmt"
 	"io"
+	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 /*
@@ -290,6 +292,23 @@ func (p *TSimpleServer) processRequests(client TTransport) (err error) {
 			}
 			ctx = AddReadTHeaderToContext(ctx, headerProtocol.GetReadHeaders())
 			ctx = SetWriteHeaderList(ctx, p.forwardHeaders)
+		}
+
+		// CheckReadable first to avoid the process hang
+		if clientSocket, ok := (client).(*TSocket); ok {
+			for {
+				err := clientSocket.CheckReadable(time.Second)
+				if err, ok := err.(net.Error); ok && err.Timeout() {
+					if atomic.LoadInt32(&p.closed) != 0 {
+						return nil
+					}
+				} else {
+					if err != nil && err != io.EOF {
+						fmt.Println("clientConn.CheckReadable(): ", err)
+					}
+					break
+				}
+			}
 		}
 
 		ok, err := processor.Process(ctx, inputProtocol, outputProtocol)

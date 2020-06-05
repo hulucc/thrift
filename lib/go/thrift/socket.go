@@ -117,6 +117,11 @@ func (p *TSocket) Conn() net.Conn {
 	return p.conn
 }
 
+// CheckReadable check readability
+func (p *TSocket) CheckReadable(timeout time.Duration) error {
+	return p.conn.CheckReadable(timeout)
+}
+
 // Returns true if the connection is open
 func (p *TSocket) IsOpen() bool {
 	return p.conn.IsOpen()

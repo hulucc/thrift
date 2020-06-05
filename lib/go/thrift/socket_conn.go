@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"io"
 	"net"
+	"time"
 )
 
 // socketConn is a wrapped net.Conn that tries to do connectivity check.
@@ -108,4 +109,16 @@ func (sc *socketConn) Read(p []byte) (n int, err error) {
 	newRead, err = sc.Conn.Read(p[n:])
 	n += newRead
 	return
+}
+
+// CheckReadable check readability
+func (sc *socketConn) CheckReadable(timeout time.Duration) error {
+	sc.Conn.SetReadDeadline(time.Now().Add(timeout))
+	buf := make([]byte, 1)
+	n, err := sc.Read(buf)
+	if n > 0 {
+		sc.buf.Write(buf[:])
+	}
+	sc.Conn.SetReadDeadline(time.Time{})
+	return err
 }
