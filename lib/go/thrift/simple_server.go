@@ -236,6 +236,9 @@ func treatEOFErrorsAsNil(err error) error {
 
 func (p *TSimpleServer) processRequests(client TTransport) (err error) {
 	defer func() {
+		if e := recover(); e != nil {
+			p.logger(fmt.Sprintf("thrift processRequests error: %v", e))
+		}
 		err = treatEOFErrorsAsNil(err)
 	}()
 
