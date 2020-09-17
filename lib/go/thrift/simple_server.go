@@ -174,6 +174,11 @@ func (p *TSimpleServer) innerAccept() (int32, error) {
 	if client != nil {
 		p.wg.Add(1)
 		go func() {
+			defer func() {
+				if e := recover(); e != nil {
+					p.logger(fmt.Sprintf("thrift innerAccept error: %v", e))
+				}
+			}()
 			defer p.wg.Done()
 			if err := p.processRequests(client); err != nil {
 				p.logger(fmt.Sprintf("error processing request: %v", err))
@@ -236,9 +241,6 @@ func treatEOFErrorsAsNil(err error) error {
 
 func (p *TSimpleServer) processRequests(client TTransport) (err error) {
 	defer func() {
-		if e := recover(); e != nil {
-			p.logger(fmt.Sprintf("thrift processRequests error: %v", e))
-		}
 		err = treatEOFErrorsAsNil(err)
 	}()
 
